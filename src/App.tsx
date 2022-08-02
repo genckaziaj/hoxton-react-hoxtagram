@@ -1,8 +1,43 @@
 import { useEffect, useState } from "react";
+import { ImageList } from "./components/ImageList";
+import { Logo } from "./components/Logo";
 import "./App.css";
 
 function App() {
   const [images, setImages] = useState([]);
+
+  function deletePost(id: number) {
+    const imagesCopy = images.filter((image) => image.id !== id);
+
+    fetch(`http://localhost:3001/images/${id}`, {
+      method: "DELETE",
+    });
+
+    setImages(imagesCopy);
+  }
+
+  function createComment(content: string, imageId: number) {
+    let newComment = {
+      content: content,
+      imageId: imageId,
+    };
+
+    fetch("http://localhost:3001/comments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newComment),
+    })
+      .then((resp) => resp.json())
+      .then((comment) => {
+        const imagesCopy = structuredClone(images);
+        const image = imagesCopy.find((image) => image.id === comment.imageId);
+        image.comments.push(comment);
+
+        setImages(imagesCopy);
+      });
+  }
 
   function addLikes(id: number) {
     let imagesCopy = structuredClone(images);
@@ -31,33 +66,13 @@ function App() {
 
   return (
     <div className="App">
-      <img className="logo" src="assets/hoxtagram-logo.png" />
-      {/* <!-- image cards --> */}
-      <section className="image-container">
-        {/* <!-- This is the HTML for each card. Use the following HTML as reference to build your React components --> */}
-        {images.map((image) => (
-          <article className="image-card" key={image.id}>
-            <h2 className="title">{image.title}</h2>
-            <img src={image.image} className="image" />
-            <div className="likes-section">
-              <span className="likes">{image.likes} likes</span>
-              <button
-                className="like-button"
-                onClick={() => {
-                  addLikes(image.id);
-                }}
-              >
-                ♥
-              </button>
-            </div>
-            <ul className="comments">
-              <li>Get rid of these comments</li>
-              <li>And replace them with the real ones</li>
-              <li>From the server</li>
-            </ul>
-          </article>
-        ))}
-      </section>
+      <Logo />
+      <ImageList
+        images={images}
+        deletePost={deletePost}
+        addLikes={addLikes}
+        createComment={createComment}
+      />
     </div>
   );
 }
